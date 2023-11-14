@@ -17,5 +17,8 @@
     "pnpm": "8"
   },
   "name": "elba-security",
-  "packageManager": "pnpm@8.10.2"
+  "packageManager": "pnpm@8.10.2",
+  "dependencies": {
+    "pg": "^8.11.3"
+  }
 }

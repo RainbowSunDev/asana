@@ -5,23 +5,33 @@ import { useSearchParams } from 'next/navigation'
 export default () => {
   const searchParams = useSearchParams()
   const code = searchParams.get("code");
-  const organization_id = searchParams.get("state")
- 
-  useEffect(() => {
-    if (code) {
-        // Here you would typically send the code to your backend
-        // to exchange it for an access token and handle the state (organization_id)
-        console.log("Authorization Code:", code);
-        console.log("Organization ID:", organization_id);
+  const organization_id = searchParams.get("state");
+  const error = searchParams.get("error");
+  const errorDescription = searchParams.get("error_description");
 
-        // Redirect to another page or display a success message
-        // router.push('/success');
+  useEffect(() => {
+    // Check if there is an error
+    if (error) {
+      console.error("OAuth Error:", error);
+      console.error("Error Description:", errorDescription);
+      // Handle the error here (e.g., display an error message, redirect to an error page, etc.)
+    } else if (code) {
+      // Authorization code is present, proceed with the token exchange
+      console.log("Authorization Code:", code);
+      console.log("Organization ID:", organization_id);
+
+      // Redirect to another page or display a success message
+      // router.push('/success');
     }
-}, [code, organization_id]);
+  }, [code, organization_id, error, errorDescription]);
 
   return (
     <main>
-      call back page
+      {error ? (
+        <div>Error during authorization: {errorDescription}</div>
+      ) : (
+        <div>Callback page</div>
+      )}
     </main>
   );
 };
