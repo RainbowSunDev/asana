@@ -19,6 +19,8 @@
   "name": "elba-security",
   "packageManager": "pnpm@8.10.2",
   "dependencies": {
+    "@vercel/postgres": "^0.5.1",
+    "axios": "^1.6.1",
     "pg": "^8.11.3"
   }
 }
