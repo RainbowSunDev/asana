@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const organization_id = searchParams.get("state");
   const error = searchParams.get("error");
+  if (error) return Response.json({"error": error})
   try {
     const tokenResponse = await axios.post('https://app.asana.com/-/oauth_token', {
       grant_type: 'authorization_code',
@@ -20,31 +21,23 @@ export async function GET(request: NextRequest) {
         'Content-Type': 'application/x-www-form-urlencoded'
       }
     });
+    
     const { access_token, token_type, expires_in, data, refresh_token } = tokenResponse.data;
     const { id, gid, name, email } = data;
-
-    console.log("tokenResponse.data", tokenResponse.data);
+    
     try {
       const insertResponse = await sql`
           INSERT INTO asana_credentials (id, gid, name, email, access_token, expires_in, refresh_token, organization_id)
-          VALUES (${id}, ${gid}, ${name}, ${email}, ${access_token}, ${expires_in}, ${refresh_token}, ${organization_id})
-          RETURNING *; // Adjust columns as per your table's structure
-      `;
+          VALUES (${id}, ${gid}, ${name}, ${email}, ${access_token}, ${expires_in}, ${refresh_token}, ${organization_id});
+          `;
   
-      console.log('Insert response:', insertResponse);
+      return Response.json(insertResponse)
   } catch (error) {
-      console.error('Error inserting data:', error);
-      // Handle the error appropriately
+    return Response.json(error)
   }
     // Send back the response from Asana
   } catch (error) {
-    console.error("error---------------------", error.response.data.error_description)
-    if (axios.isAxiosError(error)) {
-      // If the error was from Axios, you can handle it here
-      
-    } else {
-      // Handle any other errors
-    }
+    return Response.json({"error": error.response.data.error_description})
   }
   
 }
