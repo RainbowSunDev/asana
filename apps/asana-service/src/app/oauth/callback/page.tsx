@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import ErrorPage from '../../error';
 import axios from 'axios';
 
+const elbaUrl = "https://elba-security.readme.io/"
 export default function Page () {
 
   const [error, setError] = useState<Error & { digest?: string } | null>(null);
@@ -23,7 +24,7 @@ export default function Page () {
     const exchangeCodeToToken = async () => {
         try {
             
-            const response = await axios.post('/api/oauth/callback', {
+            const response = await axios.post('/api/exchange-token', {
                 code: code,
                 organization_id: organization_id,
             }, 
@@ -34,6 +35,7 @@ export default function Page () {
             });
           
           console.log("response", response)
+          if(response.data.success) window.location.href = elbaUrl;
           // Handle response here
         } catch (err) {
             if (err instanceof Error) {
@@ -50,7 +52,7 @@ export default function Page () {
 
   return (
         <main>
-            {error ? (<ErrorPage error = {error} reset={() => {}} />) : ('Redirecting to Asana...')}
+            {error ? (<ErrorPage error = {error} reset={() => {}} />) : ('Redirecting to Elba...')}
         </main>
     );
 };
