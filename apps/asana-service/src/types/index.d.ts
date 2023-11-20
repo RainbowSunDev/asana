@@ -14,21 +14,16 @@ export type CodeExchangeData = {
   };
   
   export type User = {
-    // Define the user properties as per the source API
-    data: [
+    gid: string,
+    email: string,
+    name: string,
+    resource_type: string,
+    role: string,
+    workspaces: [
       {
         gid: string,
-        email: string,
         name: string,
-        resource_type: string,
-        role: string,
-        workspaces: [
-          {
-            gid: string,
-            name: string,
-            resource_type: string
-          }
-        ]
+        resource_type: string
       }
     ]
   };
@@ -44,4 +39,11 @@ export type CodeExchangeData = {
   export type RefreshTokenResponse = {
     access_token: string;
     expires_in: number;
+  };
+
+  export type ElbaSendData = {
+    id: string;
+    email: string;
+    displayName: string;
+    additionalEmails: string[];
   };

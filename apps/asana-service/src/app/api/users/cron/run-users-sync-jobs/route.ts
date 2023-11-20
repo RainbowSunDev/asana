@@ -2,13 +2,15 @@ import { NextRequest } from 'next/server';
 import { QueryResult, sql } from '@vercel/postgres';
 import axios from 'axios';
 import { CodeExchangeData } from '@/types';
-import type { Job, User, AsanaUsersData, RefreshTokenResponse } from '@/types';
+import type { Job, User, AsanaUsersData, RefreshTokenResponse, ElbaSendData } from '@/types';
 
+const sdk = require('api')('@elba-security/v1.0#3vmgd2rclot9zhi8');
 const Asana = require('asana');
 
 const MAX_DURATION = 45000; // 45 seconds in milliseconds
 
 export async function GET(request: NextRequest) {
+  
   const startTime = Date.now();
 
   try {
@@ -19,14 +21,14 @@ export async function GET(request: NextRequest) {
 
     const accessToken = await getAccessToken(job.organisation_id);
     let paginationToken = job.pagination_token;
-
-    while (paginationToken && (Date.now() - startTime) < MAX_DURATION) {
+    console.log("paginationToken:", job)
+    do {
       const asanaResponse = await fetchUsersFromAsana(accessToken, job.organisation_id, paginationToken);
       await postUsersToElba(asanaResponse.users, job.organisation_id);
 
       paginationToken = asanaResponse.next_page?.offset;
       await updateJobToken(job.organisation_id, paginationToken);
-    }
+    } while (paginationToken && (Date.now() - startTime) < MAX_DURATION)
 
     await finalizeJob(job);
 
@@ -172,14 +174,59 @@ function tokenIsExpired(expiresIn: number): boolean {
   return currentTime >= expiresIn;
 }
 
-async function postUsersToElba(users: User[], organisation_id: string): Promise<void> {
+async function postUsersToElba(users: User[], organisationId: string): Promise<void> {
+  console.log("users:", users)
+  const testData = [
+    {
+      gid: '1205924898463724',
+      email: 'testone@gmail.com',
+      name: 'Test One',
+      resource_type: 'user',
+      role: '',
+      workspaces: []
+    },
+    {
+      gid: '1205925248630961',
+      email: 'testtwo@gmail.com',
+      name: 'Test Two',
+      resource_type: 'user',
+      role: '',
+      workspaces: []
+    }
+  ]
+  const sendData: ElbaSendData[] = testData.map(userData => ({
+    id: userData.gid,
+    email: userData.email,
+    displayName: `${userData.email}-${userData.name}`,
+    additionalEmails: []
+  }))
+  try {
+    const response = await sdk.users({
+        organisationId: "b91f113b-bcf9-4a28-98c7-5b13fb671c19",
+        sourceId: process.env.NEXT_PUBLIC_SOURCE_ID,
+        users: sendData
+    });
+    console.log(response.data);
+  } catch (err) {
+      console.error(err);
+  }
   // Format the users list as required by Elba's API
   // Post the formatted list to Elba's update-source-users endpoint
   // This is a placeholder implementation
 }
 
-async function callElbaDeleteEndpoint(organisation_id: string, lastSyncedBefore: Date): Promise<void> {
+async function callElbaDeleteEndpoint(organisationId: string, lastSyncedBefore: Date): Promise<void> {
   // Implement the logic to call Elba's delete-source-users endpoint
   // Pass the organisation_id and lastSyncedBefore timestamp
-  // This is a placeholder implementation
+  try {
+    const response = await sdk.users1({
+        organisationId: organisationId,
+        sourceId: process.env.NEXT_PUBLIC_SOURCE_ID,
+        lastSyncedBefore: lastSyncedBefore,
+    });
+    console.log(response.data);
+  } catch (err) {
+      console.error(err);
+  }
+  
 }
