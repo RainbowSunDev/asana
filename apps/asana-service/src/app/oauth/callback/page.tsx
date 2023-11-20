@@ -11,7 +11,7 @@ export default function Page () {
 
   const searchParams = useSearchParams();
   const code = searchParams.get('code')
-  const organization_id = searchParams.get("state");
+  const organisation_id = searchParams.get("state");
   const errorMessage = searchParams.get("error");
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function Page () {
             
             const response = await axios.post('/api/exchange-token', {
                 code: code,
-                organization_id: organization_id,
+                organisation_id: organisation_id,
             }, 
             {
                 headers: {
@@ -44,7 +44,7 @@ export default function Page () {
         }
     };
   
-    if (code && organization_id && !errorMessage) {
+    if (code && organisation_id && !errorMessage) {
         exchangeCodeToToken();
     }
 
