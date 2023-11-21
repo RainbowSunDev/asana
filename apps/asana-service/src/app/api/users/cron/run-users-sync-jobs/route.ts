@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const accessToken = await getAccessToken(job.organisation_id);
 
     let paginationToken = job.pagination_token;
-    console.log("paginationToken:", job)
+
     do {
       const asanaResponse = await fetchUsersFromAsana(accessToken, job.organisation_id, paginationToken);
       await postUsersToElba(asanaResponse.users, job.organisation_id);
@@ -35,7 +35,6 @@ export async function GET(request: NextRequest) {
 
     return new Response(JSON.stringify({ success: true }));
   } catch (error) {
-    console.error(error);
     return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
   }
 }
@@ -46,7 +45,6 @@ async function getNextJob(): Promise<Job | null> {
     ORDER BY priority ASC, sync_started_at ASC
     LIMIT 1;
   `;
-  console.log("rows: jobRows", jobRows)
   if (jobRows.length === 0) {
     return null;
   }
@@ -83,7 +81,7 @@ async function fetchUsersFromAsana(accessToken: string, organisationId: string, 
   // Construct resource API Instance
   const usersApiInstance = new Asana.UsersApi();
   let opts = {
-    'workspace': "1205925159194295",
+    'workspace': "1205941523188542",
     'limit': parseInt(process.env.NEXT_PUBLIC_USERS_SYNC_JOB_BATCH_SIZE || '100'),
     'offset': paginationToken,
     'opt_fields': "email, name,resource_type, offset, path,uri,workspaces,workspaces.name,workspaces.resource_type, role"
@@ -131,7 +129,7 @@ async function refreshAndSaveAccessToken(organisationId: string, refreshToken: s
 
   await sql`
     UPDATE asana_credentials
-    SET access_token = ${access_token}, expires_at = ${expires_at}
+    SET access_token = ${access_token}, expires_in = ${expires_at}
     WHERE organisation_id = ${organisationId};
   `;
 
@@ -170,8 +168,6 @@ function tokenIsExpired(expiresIn: number): boolean {
   
   // Implement logic to determine if the token is expired
   const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
-  console.log("tokenIsExpired  --  expiresIn",expiresIn)
-  console.log("tokenIsExpired  --  currentTime",currentTime)
   return currentTime >= expiresIn;
 }
 
@@ -179,27 +175,8 @@ async function postUsersToElba(users: User[], organisationId: string): Promise<v
   // Format the users list as required by Elba's API
   // Post the formatted list to Elba's update-source-users endpoint
   // This is a placeholder implementation
-  console.log("users:", users[0].workspaces)
-  return
-  const testData = [
-    {
-      gid: '1205924898463724',
-      email: 'testone@gmail.com',
-      name: 'Test One',
-      resource_type: 'user',
-      role: '',
-      workspaces: []
-    },
-    {
-      gid: '1205925248630961',
-      email: 'testtwo@gmail.com',
-      name: 'Test Two',
-      resource_type: 'user',
-      role: '',
-      workspaces: []
-    }
-  ]
-  const sendData: ElbaSendData[] = testData.map(userData => ({
+  
+  const sendData: ElbaSendData[] = users.map(userData => ({
     id: userData.gid,
     email: userData.email,
     displayName: `${userData.email}-${userData.name}`,
@@ -211,9 +188,7 @@ async function postUsersToElba(users: User[], organisationId: string): Promise<v
         sourceId: process.env.NEXT_PUBLIC_SOURCE_ID,
         users: sendData
     });
-    console.log(response.data);
   } catch (err) {
-      console.error(err);
       throw new Error("Post error to Elba")
   }
 }
@@ -227,9 +202,7 @@ async function callElbaDeleteEndpoint(organisationId: string, lastSyncedBefore: 
         sourceId: process.env.NEXT_PUBLIC_SOURCE_ID,
         lastSyncedBefore: lastSyncedBefore,
     });
-    console.log(response.data);
   } catch (err) {
-      console.error(err);
       throw new Error("Delete error from Elba")
   }
 }

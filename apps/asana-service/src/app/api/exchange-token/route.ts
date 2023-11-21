@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import axios from 'axios';
 import { sql } from '@vercel/postgres';
 import { CodeExchangeData } from '@/types';
+
 const Asana = require('asana');
 
 type ReqData = {
@@ -9,10 +10,9 @@ type ReqData = {
   organisation_id: string;
 };
 
-
 export async function POST(request: NextRequest) {
-  const responseData = await request.json();
-  const reqData = responseData as ReqData;
+  const requestData = await request.json();
+  const reqData = requestData as ReqData;
   const { code, organisation_id } = reqData;
 
   try {
@@ -59,7 +59,6 @@ export async function POST(request: NextRequest) {
     return new Response(JSON.stringify({ success: true }), { status: 200 });
 
   } catch (error) {
-    console.log("error", error)
     // Improved error handling
     if (axios.isAxiosError(error) && error.response) {
       const errorMessage = error.response.data?.error_description || 'Unknown error occurred';
@@ -74,15 +73,27 @@ async function createWebhook(acessToken: string, organisationId: string) {
   const token = client.authentications['token'];
   token.accessToken = acessToken;
 
-  let webhooksApiInstance = new Asana.WebhooksApi();
-    let body = {"data": {"resource": "1205925159194295", "target": "https://asana-myapp/api/users/webhook", "filters" : {"resource_type": "user"}}}; // Object | The webhook workspace and target.
-    let opts = { 
+  const webhooksApiInstance = new Asana.WebhooksApi();
+  const body = {
+    "data": {
+      "resource": organisationId, 
+      "target": process.env.NEXT_PUBLIC_WEBHOOK_URI, 
+      "filters" : [
+        {"resource_type": "project", "action":"changed"},
+        {"resource_type": "project", "action":"added"},
+        {"resource_type": "project", "action":"removed"},
+        {"resource_type": "project", "action":"deleted"},
+        {"resource_type": "project", "action":"undeleted"},
+      ]
+    }
+  }; 
+  const opts = { 
         'opt_fields': "active,created_at,filters,filters.action,filters.fields,filters.resource_subtype,last_failure_at,last_failure_content,last_success_at,resource,resource.name,target"
     };
+
   try {
     const webhook = await webhooksApiInstance.createWebhook(body, opts);
-    console.log('Webhook created:', webhook);
   } catch (error) {
-    console.error('Error creating webhook:', error);
+    throw new Error("Webhook error")
   }
 }
