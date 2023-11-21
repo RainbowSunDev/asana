@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import axios from 'axios';
 import { sql } from '@vercel/postgres';
 import { CodeExchangeData } from '@/types';
+const Asana = require('asana');
 
 type ReqData = {
   code: string;
@@ -52,6 +53,8 @@ export async function POST(request: NextRequest) {
         priority = EXCLUDED.priority,
         sync_started_at = EXCLUDED.sync_started_at;
     `;
+    
+    await createWebhook(access_token, organisation_id);
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
 
@@ -63,5 +66,23 @@ export async function POST(request: NextRequest) {
       return new Response(JSON.stringify({ name: "error", message: errorMessage }), { status: 500 });
     }
     return new Response(JSON.stringify({ name: "error", message: error.response.data?.error_description }), { status: 500 });
+  }
+}
+
+async function createWebhook(acessToken: string, organisationId: string) {
+  const client = Asana.ApiClient.instance;
+  const token = client.authentications['token'];
+  token.accessToken = acessToken;
+
+  let webhooksApiInstance = new Asana.WebhooksApi();
+    let body = {"data": {"resource": "1205925159194295", "target": "https://asana-myapp/api/users/webhook", "filters" : {"resource_type": "user"}}}; // Object | The webhook workspace and target.
+    let opts = { 
+        'opt_fields': "active,created_at,filters,filters.action,filters.fields,filters.resource_subtype,last_failure_at,last_failure_content,last_success_at,resource,resource.name,target"
+    };
+  try {
+    const webhook = await webhooksApiInstance.createWebhook(body, opts);
+    console.log('Webhook created:', webhook);
+  } catch (error) {
+    console.error('Error creating webhook:', error);
   }
 }

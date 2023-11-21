@@ -3,6 +3,7 @@ import { QueryResult, sql } from '@vercel/postgres';
 import axios from 'axios';
 import { CodeExchangeData } from '@/types';
 import type { Job, User, AsanaUsersData, RefreshTokenResponse, ElbaSendData } from '@/types';
+import { error } from 'console';
 
 const sdk = require('api')('@elba-security/v1.0#3vmgd2rclot9zhi8');
 const Asana = require('asana');
@@ -18,8 +19,8 @@ export async function GET(request: NextRequest) {
     if (!job) {
       return new Response(JSON.stringify({ message: "No job in the queue" }), { status: 200 });
     }
-
     const accessToken = await getAccessToken(job.organisation_id);
+
     let paginationToken = job.pagination_token;
     console.log("paginationToken:", job)
     do {
@@ -175,7 +176,11 @@ function tokenIsExpired(expiresIn: number): boolean {
 }
 
 async function postUsersToElba(users: User[], organisationId: string): Promise<void> {
-  console.log("users:", users)
+  // Format the users list as required by Elba's API
+  // Post the formatted list to Elba's update-source-users endpoint
+  // This is a placeholder implementation
+  console.log("users:", users[0].workspaces)
+  return
   const testData = [
     {
       gid: '1205924898463724',
@@ -202,17 +207,15 @@ async function postUsersToElba(users: User[], organisationId: string): Promise<v
   }))
   try {
     const response = await sdk.users({
-        organisationId: "b91f113b-bcf9-4a28-98c7-5b13fb671c19",
+        organisationId: organisationId,
         sourceId: process.env.NEXT_PUBLIC_SOURCE_ID,
         users: sendData
     });
     console.log(response.data);
   } catch (err) {
       console.error(err);
+      throw new Error("Post error to Elba")
   }
-  // Format the users list as required by Elba's API
-  // Post the formatted list to Elba's update-source-users endpoint
-  // This is a placeholder implementation
 }
 
 async function callElbaDeleteEndpoint(organisationId: string, lastSyncedBefore: Date): Promise<void> {
@@ -227,6 +230,6 @@ async function callElbaDeleteEndpoint(organisationId: string, lastSyncedBefore: 
     console.log(response.data);
   } catch (err) {
       console.error(err);
+      throw new Error("Delete error from Elba")
   }
-  
 }

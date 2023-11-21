@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import ErrorPage from '../../error';
 import axios from 'axios';
 
-const elbaUrl = "https://elba-security.readme.io/"
+// const elbaUrl = "https://elba-security.readme.io/"
 export default function Page () {
 
   const [error, setError] = useState<Error & { digest?: string } | null>(null);
@@ -35,8 +35,7 @@ export default function Page () {
             });
           
           console.log("response", response)
-          if(response.data.success) window.location.href = elbaUrl;
-          // Handle response here
+        //   if(response.data.success) window.location.href = elbaUrl;
         } catch (err) {
             if (err instanceof Error) {
                 setError(err);
