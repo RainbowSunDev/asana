@@ -1,8 +1,8 @@
 {
-    "crons": [
-      {
-        "path": "/api/users/cron/run-users-sync-jobs",
-        "schedule": "* * 5 * *"
-      }
-    ]
+    // "crons": [
+    //   {
+    //     "path": "/api/users/cron/run-users-sync-jobs",
+    //     "schedule": "* * 5 * *"
+    //   }
+    // ]
   }
