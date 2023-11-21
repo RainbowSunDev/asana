@@ -2,7 +2,7 @@
     "crons": [
       {
         "path": "/api/users/cron/run-users-sync-jobs",
-        "schedule": "*0 5 * * *"
+        "schedule": "* 5 * * *"
       }
     ]
   }
