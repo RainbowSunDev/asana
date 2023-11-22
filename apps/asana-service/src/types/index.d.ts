@@ -5,6 +5,15 @@ export type CodeExchangeData = {
   data: { id: string; gid: string; name: string; email: string };
   refresh_token: string;
 };
+export type AsanaCredentialTableData = {
+  id: string,
+  gid: string,
+  name: string,
+  email: string,
+  access_token: string;
+  expires_in: number;
+  refresh_token: string;
+};
 
 export type Job = {
   organisation_id: string;
