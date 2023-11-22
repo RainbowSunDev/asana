@@ -8,7 +8,6 @@ export function middleware(req: NextRequest) {
       statusText: 'Unauthorized',
     });
   }
-
 }
 
 export const config = {

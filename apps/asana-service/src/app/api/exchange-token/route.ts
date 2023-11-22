@@ -16,17 +16,21 @@ export async function POST(request: NextRequest) {
   const { code, organisation_id } = reqData;
 
   try {
-    const tokenResponse = await axios.post<CodeExchangeData>('https://app.asana.com/-/oauth_token', {
-      grant_type: 'authorization_code',
-      client_id: process.env.NEXT_PUBLIC_ASANA_CLIENT_ID,
-      client_secret: process.env.NEXT_PUBLIC_ASANA_CLIENT_SECRET,
-      redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_URI,
-      code,
-    }, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+    const tokenResponse = await axios.post<CodeExchangeData>(
+      'https://app.asana.com/-/oauth_token',
+      {
+        grant_type: 'authorization_code',
+        client_id: process.env.NEXT_PUBLIC_ASANA_CLIENT_ID,
+        client_secret: process.env.NEXT_PUBLIC_ASANA_CLIENT_SECRET,
+        redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_URI,
+        code,
       },
-    });
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
 
     const { access_token, expires_in, data, refresh_token } = tokenResponse.data;
     const { id, gid, name, email } = data;
@@ -53,14 +57,13 @@ export async function POST(request: NextRequest) {
         priority = EXCLUDED.priority,
         sync_started_at = EXCLUDED.sync_started_at;
     `;
-    
+
     await createWebhook(access_token, organisation_id);
 
     return NextResponse.json({ success: true }, { status: 200 });
-
   } catch (error) {
     // Improved error handling
-    return NextResponse.json({ name: "error", message: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ name: 'error', message: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -71,25 +74,26 @@ async function createWebhook(accessToken: string, organisationId: string) {
 
   const webhooksApiInstance = new Asana.WebhooksApi();
   const body = {
-    "data": {
-      "resource": organisationId, 
-      "target": process.env.NEXT_PUBLIC_WEBHOOK_URI, 
-      "filters" : [
-        {"resource_type": "project", "action":"changed"},
-        {"resource_type": "project", "action":"added"},
-        {"resource_type": "project", "action":"removed"},
-        {"resource_type": "project", "action":"deleted"},
-        {"resource_type": "project", "action":"undeleted"},
-      ]
-    }
-  }; 
-  const opts = { 
-        'opt_fields': "active,created_at,filters,filters.action,filters.fields,filters.resource_subtype,last_failure_at,last_failure_content,last_success_at,resource,resource.name,target"
-    };
+    data: {
+      resource: organisationId,
+      target: process.env.NEXT_PUBLIC_WEBHOOK_URI,
+      filters: [
+        { resource_type: 'project', action: 'changed' },
+        { resource_type: 'project', action: 'added' },
+        { resource_type: 'project', action: 'removed' },
+        { resource_type: 'project', action: 'deleted' },
+        { resource_type: 'project', action: 'undeleted' },
+      ],
+    },
+  };
+  const opts = {
+    opt_fields:
+      'active,created_at,filters,filters.action,filters.fields,filters.resource_subtype,last_failure_at,last_failure_content,last_success_at,resource,resource.name,target',
+  };
 
   try {
     const webhook = await webhooksApiInstance.createWebhook(body, opts);
   } catch (error) {
-    throw new Error("Webhook error", {cause: error})
+    throw new Error('Webhook error', { cause: error });
   }
 }
