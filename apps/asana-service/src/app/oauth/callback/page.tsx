@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import ErrorPage from '../../error';
 import axios from 'axios';
 
+// redirected page from asana authentication
 export default function Page () {
 
   const [error, setError] = useState<Error & { digest?: string } | null>(null);
@@ -22,7 +23,6 @@ export default function Page () {
 
     const exchangeCodeToToken = async () => {
         try {
-            
             const response = await axios.post('/api/exchange-token', {
                 code: code,
                 organisation_id: organisation_id,

@@ -1,23 +1,18 @@
-import { NextRequest } from 'next/server';
-import { QueryResult, sql } from '@vercel/postgres';
+import { NextResponse } from 'next/server';
+import { sql } from '@vercel/postgres';
 import axios from 'axios';
 import { CodeExchangeData } from '@/types';
 import type { Job, User, AsanaUsersData, RefreshTokenResponse, ElbaSendData } from '@/types';
-import { error } from 'console';
 
 const sdk = require('api')('@elba-security/v1.0#3vmgd2rclot9zhi8');
 const Asana = require('asana');
 
-const MAX_DURATION = 45000; // 45 seconds in milliseconds
-
-export async function GET(request: NextRequest) {
+export async function GET() {
   
-  const startTime = Date.now();
-
   try {
     const job = await getNextJob();
     if (!job) {
-      return new Response(JSON.stringify({ message: "No job in the queue" }), { status: 200 });
+      return NextResponse.json({ message: "No job in the queue" }, { status: 200 });
     }
     const accessToken = await getAccessToken(job.organisation_id);
 
@@ -28,39 +23,35 @@ export async function GET(request: NextRequest) {
       await postUsersToElba(asanaResponse.users, job.organisation_id);
 
       paginationToken = asanaResponse.next_page?.offset;
-      await updateJobToken(job.organisation_id, paginationToken);
-    } while (paginationToken && (Date.now() - startTime) < MAX_DURATION)
+      if(paginationToken) {
+        await updateJobToken(job.organisation_id, paginationToken);
+      }
+    } while (paginationToken)
 
     await finalizeJob(job);
 
-    return new Response(JSON.stringify({ success: true }));
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
 async function getNextJob(): Promise<Job | null> {
-  const { rows: jobRows } = await sql`
+  const { rows: [job] } = await sql`
     SELECT * FROM users_sync_jobs
     ORDER BY priority ASC, sync_started_at ASC
     LIMIT 1;
   `;
-  if (jobRows.length === 0) {
-    return null;
-  }
-
-  const job = jobRows[0] as Job; // Explicitly cast the row to type Job
-  return job;
+  
+  return job as Job | null;
 }
 
-async function updateJobToken(organisationId: string, paginationToken?: string): Promise<void> {
-  if (paginationToken) {
-    await sql`
-      UPDATE users_sync_jobs
-      SET pagination_token = ${paginationToken}
-      WHERE organisation_id = ${organisationId};
-    `;
-  }
+async function updateJobToken(organisationId: string, paginationToken: string): Promise<void> {
+  await sql`
+    UPDATE users_sync_jobs
+    SET pagination_token = ${paginationToken}
+    WHERE organisation_id = ${organisationId};
+  `;
 }
 
 async function finalizeJob(job: Job): Promise<void> {
@@ -160,7 +151,7 @@ async function refreshAccessToken(refreshToken: string): Promise<RefreshTokenRes
     return { access_token, expires_in };
   } catch (error) {
     console.error('Error refreshing access token:');
-    throw new Error('Failed to refresh Asana access token'); // Explicitly return undefined
+    throw new Error('Failed to refresh Asana access token', {cause: error}); // Explicitly return undefined
   }
 }
 

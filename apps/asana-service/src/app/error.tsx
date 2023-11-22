@@ -9,7 +9,7 @@ export default function Error({
 }) {
   return (
     <div>
-      {error.name ? <h2>error.message</h2> : <h2>Something went wrong</h2>}
+      {error.name ? <h2>{error.message}</h2> : <h2>Something went wrong</h2>}
       <button onClick={() => reset()}>Try again</button>
     </div>
   )

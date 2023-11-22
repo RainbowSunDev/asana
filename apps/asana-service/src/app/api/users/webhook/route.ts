@@ -35,13 +35,13 @@ export async function POST(request: NextRequest) {
             sync_started_at = EXCLUDED.sync_started_at;
           `;
         // Respond to acknowledge receipt
-        return new Response(JSON.stringify({ success: true }), { status: 200 });
+        return NextResponse.json({ success: true }, { status: 200 });
       } catch (error) {
         // Respond to acknowledge receipt
-        return new Response(JSON.stringify({ name: "error", message: "database error" }), { status: 500 });
+        return NextResponse.json({ name: "error", message: "database error" }, { status: 500 });
       }
       
     } else {
-      return new Response(JSON.stringify({ name: "error", message: "No data" }), { status: 500 });
+      return NextResponse.json({ name: "error", message: "No data" }, { status: 500 });
     }
 }

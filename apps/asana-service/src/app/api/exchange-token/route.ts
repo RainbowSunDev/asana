@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { sql } from '@vercel/postgres';
 import { CodeExchangeData } from '@/types';
@@ -56,22 +56,18 @@ export async function POST(request: NextRequest) {
     
     await createWebhook(access_token, organisation_id);
 
-    return new Response(JSON.stringify({ success: true }), { status: 200 });
+    return NextResponse.json({ success: true }, { status: 200 });
 
   } catch (error) {
     // Improved error handling
-    if (axios.isAxiosError(error) && error.response) {
-      const errorMessage = error.response.data?.error_description || 'Unknown error occurred';
-      return new Response(JSON.stringify({ name: "error", message: errorMessage }), { status: 500 });
-    }
-    return new Response(JSON.stringify({ name: "error", message: error.response.data?.error_description }), { status: 500 });
+    return NextResponse.json({ name: "error", message: "Internal Server Error" }, { status: 500 });
   }
 }
 
-async function createWebhook(acessToken: string, organisationId: string) {
+async function createWebhook(accessToken: string, organisationId: string) {
   const client = Asana.ApiClient.instance;
   const token = client.authentications['token'];
-  token.accessToken = acessToken;
+  token.accessToken = accessToken;
 
   const webhooksApiInstance = new Asana.WebhooksApi();
   const body = {
@@ -94,6 +90,6 @@ async function createWebhook(acessToken: string, organisationId: string) {
   try {
     const webhook = await webhooksApiInstance.createWebhook(body, opts);
   } catch (error) {
-    throw new Error("Webhook error")
+    throw new Error("Webhook error", {cause: error})
   }
 }
