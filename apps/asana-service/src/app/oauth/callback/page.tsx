@@ -42,7 +42,7 @@ export default function Page() {
     };
 
     if (code && organisation_id && !errorMessage) {
-      exchangeCodeToToken();
+      // exchangeCodeToToken();
     }
   }, []);
 
